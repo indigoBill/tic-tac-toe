@@ -1,1 +1,1 @@
-# tic-tac-toe
+Create a tic-tac-toe game to practice using factory functions and the module pattern
