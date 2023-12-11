@@ -1,76 +1,107 @@
-const gameBoardLayout = (function(){
-    const gameBoard = ['','','','','','','','',''];
+const gameBoard = (function(){
 
-    function resetGame(){
-        gameBoard.fill('', 0);
+    const board = ['','','','','','','','',''];
+
+    function getBoard(){
+        return board;
     }
 
-    function addPlayToGameBoard(gameBoardPosition, playerMark){
-        gameBoard.splice(gameBoardPosition, 1, playerMark);
+    function resetBoard(){
+        board.fill('');
     }
 
-    function getGameBoard(){
-        return gameBoard;
+    function addMark(mark, boardIndex){
+        board.splice(boardIndex, 1, mark);
+        console.log(getBoard());
     }
 
-    return {addPlayToGameBoard, getGameBoard, resetGame};
+    return {getBoard, resetBoard, addMark};
 })();
 
+(function gameFlow(){
 
-const gamePlayer = function(name, playerMark){
-    const currentGameBoard = gameBoardLayout.getGameBoard();
+    const board = gameBoard.getBoard();
+    let playerMark;
+    let computerMark;
+    let activeMarker;
 
-    function playGame(gameBoardPosition){
-        const isIndexValid = gameBoardPosition >= 0 && gameBoardPosition <= 8;
-        const isPositionEmpty = currentGameBoard[gameBoardPosition] === '';
+    function getPlayerMark(){
+        const mark = prompt('CHOOSE A MARK: X OR O').toUpperCase();
 
-        if(isIndexValid && isPositionEmpty){
-            gameBoardLayout.addPlayToGameBoard(gameBoardPosition, playerMark);
-            gameFlow.checkForWinner(gameBoardPosition, playerMark, name);
+        if(mark == 'X' || mark == 'O'){
+            playerMark = mark;
+            getComputerMark();
+            console.log(`THE PLAYER IS ${playerMark}`);
+            console.log(`THE COMPUTER IS ${computerMark}`);
         }else{
-            console.log('CHOOSE ANOTHER POSITION');
+            console.log('PLEASE CHOOSE EITHER X OR O');
         }
     }
 
-    return {name, playerMark, playGame};
-}
-
-const gameFlow = (function(){
-    const currentGameBoard = gameBoardLayout.getGameBoard();
-    
-    function displayPlayerTurn(playerName){
-        console.log(`IT'S ${playerName}'S TURN.`);
+    function getComputerMark(){
+        computerMark = playerMark == 'X' ? 'O' : 'X';
     }
 
-    function checkForWinner(gameBoardPosition, playerMark, playerName){
-        console.log(currentGameBoard);
+    function getComputerPlay(){
+        let availablePositions = [];
 
-        const possibleWaysToWin = [[0, 1, 2],[3, 4, 5],[6, 7, 8],[0, 3, 6],[1, 4, 7],[2, 5, 8],[2, 4, 6],[0, 4, 8]];
-        const filteredWaysToWin = possibleWaysToWin.filter((subArray) => subArray.includes(gameBoardPosition));
-
-        function checkEquality(element){
-            return currentGameBoard[element] === playerMark;
-        }
-
-        filteredWaysToWin.forEach((array) => {
-            if(array.every((checkEquality))){
-                console.log(`${playerName} IS THE WINNER!`);
-
-                gameBoardLayout.resetGame();
-                console.log(currentGameBoard);
+        board.forEach((element, index) => {
+            if(element == ''){
+                availablePositions.push(index);
             }
-        })
+        });
+
+        const getRandomPositionIndex = () => Math.floor(Math.random() * availablePositions.length);
+
+        return availablePositions[getRandomPositionIndex()];
     }
+
+    function initMove(){
+        if(playerMark == 'X'){
+            let position = Number(prompt('PLACE YOUR 1ST MARK'));
+            
+            if(position >= 0 || position <= 8){
+                gameBoard.addMark(playerMark, position);
+                activeMarker = playerMark;
+            }
+            
+        }else{
+            gameBoard.addMark(computerMark, getComputerPlay());
+            activeMarker = computerMark;
+        }
+    }
+
+    function playMove(){
+        
+        switchPlayer();
+
+
+        
+        
+    }
+
+    function switchPlayer(){
+        activeMarker = activeMarker == playerMark ? computerMark : playerMark;
+    }
+
+    function checkForWinner(){
+        const possibleWins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[2,4,6],[0,4,8]];
+    }
+
+    function checkForTie(){
+
+    }
+
+    function startGame(){
+        getPlayerMark();
+        initMove();
+        playMove();
+    }
+
+    startGame();
     
-    return {displayPlayerTurn, checkForWinner};
+
 })();
 
-
-const player1 = gamePlayer('player1', 'X');
-const player2 = gamePlayer('player2', 'O');
-
-player1.playGame(2);
-player1.playGame(0);
-player1.playGame(1);
 
 
