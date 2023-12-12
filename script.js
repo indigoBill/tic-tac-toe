@@ -1,4 +1,4 @@
-const gameBoard = (function(){
+const GameBoard = (function(){
 
     const board = ['','','','','','','','',''];
 
@@ -18,23 +18,47 @@ const gameBoard = (function(){
     return {getBoard, resetBoard, addMark};
 })();
 
-(function gameFlow(){
 
-    const board = gameBoard.getBoard();
+const Player = function(marker, name = 'player1'){
+    this.name = name;
+    this.marker = marker;
+
+    const board = GameBoard.getBoard();
+
+    Player.prototype.getPlayerMove = function(){
+        let boardPosition = Number(prompt('YOUR TURN. PICK A POSITION'));
+
+        if(board[boardPosition] === ''){
+            console.log(`SUCCESS: ${boardPosition}`);
+            return boardPosition;
+        }else{
+            return getPlayerMove();
+        }
+    }
+}
+
+const GameFlow = (function(){
+
+    const board = GameBoard.getBoard();
     let playerMark;
     let computerMark;
     let activeMarker;
+    let isWinner = false;
 
     function getPlayerMark(){
         const mark = prompt('CHOOSE A MARK: X OR O').toUpperCase();
 
-        if(mark == 'X' || mark == 'O'){
+        if(mark === 'X' || mark === 'O'){
             playerMark = mark;
             getComputerMark();
+
+            //const player = new Player(mark);
+
             console.log(`THE PLAYER IS ${playerMark}`);
             console.log(`THE COMPUTER IS ${computerMark}`);
         }else{
             console.log('PLEASE CHOOSE EITHER X OR O');
+            getPlayerMark();
         }
     }
 
@@ -42,11 +66,22 @@ const gameBoard = (function(){
         computerMark = playerMark == 'X' ? 'O' : 'X';
     }
 
+    function getPlayerPlay(){
+        let boardPosition = Number(prompt('YOUR TURN. PICK A POSITION'));
+
+        if(board[boardPosition] === ''){
+            console.log(`SUCCESS: ${boardPosition}`);
+            return boardPosition;
+        }else{
+            return getPlayerPlay();
+        }
+    }
+
     function getComputerPlay(){
         let availablePositions = [];
 
         board.forEach((element, index) => {
-            if(element == ''){
+            if(element === ''){
                 availablePositions.push(index);
             }
         });
@@ -56,51 +91,79 @@ const gameBoard = (function(){
         return availablePositions[getRandomPositionIndex()];
     }
 
-    function initMove(){
+    function playXFirst(){
         if(playerMark == 'X'){
-            let position = Number(prompt('PLACE YOUR 1ST MARK'));
-            
-            if(position >= 0 || position <= 8){
-                gameBoard.addMark(playerMark, position);
-                activeMarker = playerMark;
-            }
-            
+            GameBoard.addMark(playerMark, getPlayerPlay());
+            activeMarker = playerMark;
         }else{
-            gameBoard.addMark(computerMark, getComputerPlay());
+            GameBoard.addMark(computerMark, getComputerPlay());
             activeMarker = computerMark;
         }
     }
 
-    function playMove(){
-        
-        switchPlayer();
+    function checkForEmptySpaces(positionValue){
+        return positionValue !== '';
+    }
 
+    function playGame(){
 
+        while(!(board.every(checkForEmptySpaces)) && isWinner == false){
+            let currentMove;
+            switchPlayer();
+
+            if(activeMarker == playerMark){
+                currentMove = getPlayerPlay();
+                GameBoard.addMark(playerMark, currentMove);
+            }else{
+                currentMove = getComputerPlay();
+                GameBoard.addMark(computerMark, currentMove);
+            }
+            checkForWinner(currentMove);
+        }
         
-        
+        if(isWinner == false){
+            checkForTie();
+        }
     }
 
     function switchPlayer(){
         activeMarker = activeMarker == playerMark ? computerMark : playerMark;
     }
 
-    function checkForWinner(){
+    function checkForWinner(currentPlayerMove){
         const possibleWins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[2,4,6],[0,4,8]];
+
+        const filteredPossibleWins = possibleWins.filter((subArray) => subArray.includes(currentPlayerMove));
+
+        function checkForMarker(position){
+            return board[position] === activeMarker;
+        }
+        
+        filteredPossibleWins.forEach((array) => {
+            if(array.every(checkForMarker)){
+                isWinner = true;
+                console.log(`${activeMarker} WINS!`);
+                GameBoard.resetBoard();
+                console.log(board);
+            }
+        })
     }
 
     function checkForTie(){
-
+        if(board.every(checkForEmptySpaces)){
+            console.log('IT\'S A TIE!');
+            GameBoard.resetBoard();
+            console.log(board);
+        }
     }
 
     function startGame(){
         getPlayerMark();
-        initMove();
-        playMove();
+        playXFirst();
+        playGame();
     }
 
     startGame();
-    
-
 })();
 
 
