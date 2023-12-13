@@ -19,13 +19,24 @@ const GameBoard = (function(){
 })();
 
 
-const Player = function(marker, name = 'player1'){
-    this.name = name;
-    this.marker = marker;
+const Player = function(name = 'Player'){
+    let marker;
 
     const board = GameBoard.getBoard();
 
-    Player.prototype.getPlayerMove = function(){
+    const getName = function(){
+        return name;
+    }
+
+    const setMarker = function(playerMarker){
+        marker = playerMarker;
+    }
+
+    const getMarker = function(){
+        return marker;
+    }
+
+    const getPlayerMove = function(){
         let boardPosition = Number(prompt('YOUR TURN. PICK A POSITION'));
 
         if(board[boardPosition] === ''){
@@ -35,49 +46,28 @@ const Player = function(marker, name = 'player1'){
             return getPlayerMove();
         }
     }
+
+    return {getName, setMarker, getMarker, getPlayerMove};
 }
 
-const GameFlow = (function(){
+const Computer = function(name = 'Computer'){
+    let marker;
 
     const board = GameBoard.getBoard();
-    let playerMark;
-    let computerMark;
-    let activeMarker;
-    let isWinner = false;
 
-    function getPlayerMark(){
-        const mark = prompt('CHOOSE A MARK: X OR O').toUpperCase();
-
-        if(mark === 'X' || mark === 'O'){
-            playerMark = mark;
-            getComputerMark();
-
-            //const player = new Player(mark);
-
-            console.log(`THE PLAYER IS ${playerMark}`);
-            console.log(`THE COMPUTER IS ${computerMark}`);
-        }else{
-            console.log('PLEASE CHOOSE EITHER X OR O');
-            getPlayerMark();
-        }
+    const getName = function(){
+        return name;
     }
 
-    function getComputerMark(){
-        computerMark = playerMark == 'X' ? 'O' : 'X';
+    const setMarker = function(computerMarker){
+        marker = computerMarker;
     }
 
-    function getPlayerPlay(){
-        let boardPosition = Number(prompt('YOUR TURN. PICK A POSITION'));
-
-        if(board[boardPosition] === ''){
-            console.log(`SUCCESS: ${boardPosition}`);
-            return boardPosition;
-        }else{
-            return getPlayerPlay();
-        }
+    const getMarker = function(){
+        return marker;
     }
 
-    function getComputerPlay(){
+    const getComputerMove = function(){
         let availablePositions = [];
 
         board.forEach((element, index) => {
@@ -91,15 +81,55 @@ const GameFlow = (function(){
         return availablePositions[getRandomPositionIndex()];
     }
 
-    function playXFirst(){
-        if(playerMark == 'X'){
-            GameBoard.addMark(playerMark, getPlayerPlay());
-            activeMarker = playerMark;
+    return {getName, setMarker, getMarker, getComputerMove};
+}
+
+const GameFlow = (function(){
+
+    const board = GameBoard.getBoard();
+    let playerMark;
+    let computerMark;
+    let activeMarker;
+    let isWinner = false;
+
+    let activePlayer;
+
+    const player = new Player();
+    const computer = new Computer();
+
+    function assignPlayerMarker(){
+        const mark = prompt('CHOOSE A MARK: X OR O').toUpperCase();
+
+        if(mark === 'X' || mark === 'O'){
+            player.setMarker(mark);
+            assignComputerMarker();
+
+            console.log(`${player.getName()} : ${player.getMarker()}`);
+            console.log(`${computer.getName()} : ${computer.getMarker()}`);
+          
         }else{
-            GameBoard.addMark(computerMark, getComputerPlay());
-            activeMarker = computerMark;
+            console.log('PLEASE CHOOSE EITHER X OR O');
+            assignPlayerMarker();
         }
     }
+
+    function assignComputerMarker(){
+        const mark = player.getMarker() === 'X' ? 'O' : 'X';
+        computer.setMarker(mark);
+    }
+
+    function playXFirst(){
+        if(player.getMarker() === 'X'){
+            GameBoard.addMark(player.getMarker(), player.getPlayerMove());
+            activePlayer = player.getName();
+        } else{
+            GameBoard.addMark(computer.getMarker(), computer.getComputerMove());
+            activePlayer = computer.getName();
+        }
+    }
+
+    //FUNCTIONS ABOVE ALREADY EDITTED
+    //CHECK FUNCTIONS BELOW
 
     function checkForEmptySpaces(positionValue){
         return positionValue !== '';
@@ -158,7 +188,7 @@ const GameFlow = (function(){
     }
 
     function startGame(){
-        getPlayerMark();
+        assignPlayerMarker();
         playXFirst();
         playGame();
     }
