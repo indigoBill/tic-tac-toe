@@ -1,0 +1,25 @@
+.single-space {
+    border-color: black;
+    padding: 15px 20px;
+}
+
+.board-container > div:nth-child(-n + 6) {
+    border-bottom: 2px solid;
+}
+
+.board-container > div:nth-last-child(-n + 6) {
+    border-top: 2px solid;
+}
+
+.board-container > div:nth-last-child(3n + 3),
+.board-container > div:nth-child(3n + 2) {
+    border-right: 2px solid;
+}
+
+.board-container > div:nth-child(3n + 3),
+.board-container > div:nth-child(3n + 2) {
+    border-left: 2px solid;
+}
+
+
+
