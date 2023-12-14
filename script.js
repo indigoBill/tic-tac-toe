@@ -1,4 +1,4 @@
-const GameBoard = (function(){
+const gameBoard = (function(){
 
     const board = ['','','','','','','','',''];
 
@@ -20,10 +20,10 @@ const GameBoard = (function(){
 })();
 
 
-const Player = function(name = 'Player'){
+const createPlayer = function(name = 'Player'){
     let marker;
 
-    const board = GameBoard.getBoard();
+    const board = gameBoard.getBoard();
 
     function getName(){
         return name;
@@ -42,7 +42,13 @@ const Player = function(name = 'Player'){
     }
 
     function getPlayerMove(){
+        const gameSquares = document.querySelectorAll('.game-square');
+        gameSquares.forEach((square) => square.addEventListener('click', displayGame.updateBoardPlayer));
+
+        /*
         let boardPosition = Number(prompt(`${name}: YOUR TURN. PICK A POSITION`));
+
+        
 
         if(board[boardPosition] === ''){
             console.log(`SUCCESS: ${boardPosition}`);
@@ -50,15 +56,16 @@ const Player = function(name = 'Player'){
         }else{
             return getPlayerMove();
         }
+        */
     }
 
     return {getName, setName, getMarker, setMarker, getPlayerMove};
 }
 
-const Computer = function(name = 'Computer'){
+const createComputer = function(name = 'Computer'){
     let marker;
 
-    const board = GameBoard.getBoard();
+    const board = gameBoard.getBoard();
 
     function getName(){
         return name;
@@ -89,27 +96,63 @@ const Computer = function(name = 'Computer'){
     return {getName, getMarker, setMarker, getComputerMove};
 }
 
-const GameFlow = (function(){
+const displayGame = (function(){
+    const board = gameBoard.getBoard();
+    const body = document.querySelector('body');
+
+    //RENDER CONTENTS OF ARRAY TO UI
+    function displayMoves(){
+        for(let i = 0; i < board.length; i++){
+            const uiSquare = document.querySelector(`.index-${i}`);
+
+            uiSquare.textContent = board[i];
+        }
+    }
+
+    function updateBoardPlayer(event){
+        const square = event.target;
+        const squareClassName = event.target.className;
+        const squareIndex = squareClassName.charAt(squareClassName.length - 1);
+        
+        if(square.textContent == ''){
+            square.textContent = gameFlow.getActiveMarker();
+            gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
+            console.log(board);
+        }else{
+            console.log('NOPE.CHOOSE ANOTHER SPOT');
+        }
+    }
+
+    function updateBoardComputer(){
+        //CREATE A FUNCTION THAT WILL DISPLAY THE COMPUTERS PLAY ON THE UI
+    }
+
+    return {displayMoves, updateBoardPlayer};
+
+})();
+
+const gameFlow = (function(){
+    let player1;
+    let player2;
     let activePlayer;
     let activeMarker;
     let isWinner = false;
     
-    const board = GameBoard.getBoard();
-    const player = new Player();
-    const computer = new Computer();
+    const board = gameBoard.getBoard();
 
-    let player1;
-    let player2;
+    function getActiveMarker(){
+        return activeMarker;
+    }
 
     function chooseOpponent(){
         const opponent = prompt('TYPE \'C\' TO PLAY AGAINST THE COMPUTER OR \'P\' TO PLAY AGAINST ANOTHER PLAYER').toUpperCase();
 
         if(opponent === 'C'){
-            player1 = new Player();
-            player2 = new Computer();
+            player1 = createPlayer();
+            player2 = createComputer();
         }else if(opponent === 'P'){
-            player1 = new Player('Player 1');
-            player2 = new Player('Player 2');
+            player1 = createPlayer('Player 1');
+            player2 = createPlayer('Player 2');
         }else{
             console.log('ENTER VALID VALUE');
             chooseOpponent();
@@ -138,17 +181,19 @@ const GameFlow = (function(){
 
     function playXFirst(){
         if(player1.getMarker() === 'X'){
-            GameBoard.addMark(player1.getMarker(), player1.getPlayerMove());
             activePlayer = player1.getName();
             activeMarker = player1.getMarker();
+            
+            player1.getPlayerMove();
         } else{
-            if(player2.hasOwnProperty('getComputerMove')){
-                GameBoard.addMark(player2.getMarker(), player2.getComputerMove());
-            }else{
-                GameBoard.addMark(player2.getMarker(), player2.getPlayerMove());
-            }
             activePlayer = player2.getName();
             activeMarker = player2.getMarker();
+
+            if(player2.hasOwnProperty('getComputerMove')){
+                gameBoard.addMark(player2.getMarker(), player2.getComputerMove());
+            }else{
+                player2.getPlayerMove();
+            }
         }
     }
 
@@ -174,8 +219,10 @@ const GameFlow = (function(){
             if(array.every(checkForMarker)){
                 isWinner = true;
                 console.log(`${activePlayer} WINS!`);
-                GameBoard.resetBoard();
+                /*
+                gameBoard.resetBoard();
                 console.log(board);
+                */
             }
         })
     }
@@ -183,8 +230,10 @@ const GameFlow = (function(){
     function checkForTie(){
         if(board.every(checkForEmptySpaces)){
             console.log('IT\'S A TIE!');
-            GameBoard.resetBoard();
+            /*
+            gameBoard.resetBoard();
             console.log(board);
+            */
         }
     }
 
@@ -196,14 +245,14 @@ const GameFlow = (function(){
 
             if(activePlayer == player1.getName()){
                 currentMove = player1.getPlayerMove();
-                GameBoard.addMark(player1.getMarker(), currentMove);
+                //gameBoard.addMark(player1.getMarker(), currentMove);
             }else{
                 if(player2.hasOwnProperty('getComputerMove')){
                     currentMove = player2.getComputerMove();
-                    GameBoard.addMark(player2.getMarker(), currentMove);
+                    //gameBoard.addMark(player2.getMarker(), currentMove);
                 }else{
                     currentMove = player2.getPlayerMove();
-                    GameBoard.addMark(player2.getMarker(), currentMove);
+                    //gameBoard.addMark(player2.getMarker(), currentMove);
                 }
             }
             checkForWinner(currentMove);
@@ -218,37 +267,16 @@ const GameFlow = (function(){
         chooseOpponent();
         assignFirstMarker();
         playXFirst();
-        playGame();
+        //playGame();
+        displayGame.displayMoves();
     }
 
-   // startGame();
+    startGame();
+
+    return {getActiveMarker};    
 })();
 
-const DisplayGame = (function(){
-    const board = GameBoard.getBoard();
-    const body = document.querySelector('body');
 
-    function updateUi(){
-        const boardContainer = document.createElement('div');
-        boardContainer.classList.add('board-container');
-
-        boardContainer.style.display = 'grid';
-        boardContainer.style.gridTemplate = 'repeat(3, 50px) / repeat(3, 50px)';
-
-        body.appendChild(boardContainer);
-
-        board.forEach((element) => {
-            const div = document.createElement('div');
-            div.classList.add('single-space');
-            div.classList.add(`index-${board.indexOf(element)}`);
-            div.textContent = element;
-            boardContainer.appendChild(div);
-        });
-    }
-    
-    updateUi();
-
-})();
 
 
 
