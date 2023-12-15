@@ -19,7 +19,6 @@ const gameBoard = (function(){
     return {getBoard, resetBoard, addMark};
 })();
 
-
 const createPlayer = function(name = 'Player'){
     let marker;
 
@@ -44,19 +43,6 @@ const createPlayer = function(name = 'Player'){
     function getPlayerMove(){
         const gameSquares = document.querySelectorAll('.game-square');
         gameSquares.forEach((square) => square.addEventListener('click', displayGame.updateBoardPlayer));
-
-        /*
-        let boardPosition = Number(prompt(`${name}: YOUR TURN. PICK A POSITION`));
-
-        
-
-        if(board[boardPosition] === ''){
-            console.log(`SUCCESS: ${boardPosition}`);
-            return boardPosition;
-        }else{
-            return getPlayerMove();
-        }
-        */
     }
 
     return {getName, setName, getMarker, setMarker, getPlayerMove};
@@ -90,7 +76,13 @@ const createComputer = function(name = 'Computer'){
 
         const getRandomPositionIndex = () => Math.floor(Math.random() * availablePositions.length);
 
-        return availablePositions[getRandomPositionIndex()];
+        let squareIndex = availablePositions[getRandomPositionIndex()];
+
+        gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
+        displayGame.displayMoves();
+        gameFlow.checkForWinner(squareIndex);
+        gameFlow.switchPlayer();
+        gameFlow.playGame();
     }
 
     return {getName, getMarker, setMarker, getComputerMove};
@@ -98,9 +90,7 @@ const createComputer = function(name = 'Computer'){
 
 const displayGame = (function(){
     const board = gameBoard.getBoard();
-    const body = document.querySelector('body');
 
-    //RENDER CONTENTS OF ARRAY TO UI
     function displayMoves(){
         for(let i = 0; i < board.length; i++){
             const uiSquare = document.querySelector(`.index-${i}`);
@@ -108,25 +98,36 @@ const displayGame = (function(){
             uiSquare.textContent = board[i];
         }
     }
-
+    
     function updateBoardPlayer(event){
         const square = event.target;
         const squareClassName = event.target.className;
-        const squareIndex = squareClassName.charAt(squareClassName.length - 1);
+        const squareIndex = Number(squareClassName.charAt(squareClassName.length - 1));
         
         if(square.textContent == ''){
             square.textContent = gameFlow.getActiveMarker();
             gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
-            console.log(board);
+
+            gameFlow.checkForWinner(squareIndex);
+            gameFlow.switchPlayer();
+            gameFlow.playGame();
         }else{
             console.log('NOPE.CHOOSE ANOTHER SPOT');
         }
     }
+/*
+    function updateBoardComputer(computerMove){
+        const boardSquares = document.querySelectorAll('.game-square');
+        boardSquares.forEach((square) => {
+            let selectedClass = square.className;
+            let squareIndex = selectedClass.charAt(selectedClass.length - 1)
 
-    function updateBoardComputer(){
-        //CREATE A FUNCTION THAT WILL DISPLAY THE COMPUTERS PLAY ON THE UI
+            if(computerMove = squareIndex){
+                square.textContent = gameFlow.getActiveMarker();
+            }
+        });
     }
-
+*/
     return {displayMoves, updateBoardPlayer};
 
 })();
@@ -145,32 +146,39 @@ const gameFlow = (function(){
     }
 
     function chooseOpponent(){
-        const opponent = prompt('TYPE \'C\' TO PLAY AGAINST THE COMPUTER OR \'P\' TO PLAY AGAINST ANOTHER PLAYER').toUpperCase();
+        const opponentsButtons = document.querySelectorAll('.opponent');
+        opponentsButtons.forEach((opponentButton) => opponentButton.addEventListener('click', createPlayers));
 
-        if(opponent === 'C'){
-            player1 = createPlayer();
-            player2 = createComputer();
-        }else if(opponent === 'P'){
-            player1 = createPlayer('Player 1');
-            player2 = createPlayer('Player 2');
-        }else{
-            console.log('ENTER VALID VALUE');
-            chooseOpponent();
-        }   
+        function createPlayers(event){
+            if(event.target.textContent === 'COMPUTER'){
+                player1 = createPlayer();
+                player2 = createComputer();
+            }else{
+                player1 = createPlayer('Player 1');
+                player2 = createPlayer('Player 2');
+            }
+            console.log('PLAYERS CREATED');
+            assignFirstMarker();
+        }
     }
 
     function assignFirstMarker(){
-        const mark = prompt('CHOOSE A MARK: X OR O').toUpperCase();
+        const markerButtons = document.querySelectorAll('.marker');
+        markerButtons.forEach((markerButton) => markerButton.addEventListener('click', selectMarkers));
 
-        if(mark === 'X' || mark === 'O'){
-            player1.setMarker(mark);
+        function selectMarkers(event){
+            if(event.target.textContent === 'X'){
+                player1.setMarker('X');
+            }else{
+                player1.setMarker('O');
+            }
+            
             assignSecondMarker();
 
             console.log(`${player1.getName()} : ${player1.getMarker()}`);
             console.log(`${player2.getName()} : ${player2.getMarker()}`);
-        }else{
-            console.log('PLEASE CHOOSE EITHER X OR O');
-            assignFirstMarker();
+
+            playXFirst();
         }
     }
 
@@ -190,7 +198,7 @@ const gameFlow = (function(){
             activeMarker = player2.getMarker();
 
             if(player2.hasOwnProperty('getComputerMove')){
-                gameBoard.addMark(player2.getMarker(), player2.getComputerMove());
+                player2.getComputerMove();
             }else{
                 player2.getPlayerMove();
             }
@@ -207,10 +215,11 @@ const gameFlow = (function(){
     }
 
     function checkForWinner(currentPlayerMove){
+   
         const possibleWins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[2,4,6],[0,4,8]];
 
         const filteredPossibleWins = possibleWins.filter((subArray) => subArray.includes(currentPlayerMove));
-
+        
         function checkForMarker(position){
             return board[position] === activeMarker;
         }
@@ -239,41 +248,27 @@ const gameFlow = (function(){
 
     function playGame(){
 
-        while(!(board.every(checkForEmptySpaces)) && isWinner == false){
-            let currentMove;
-            switchPlayer();
-
-            if(activePlayer == player1.getName()){
-                currentMove = player1.getPlayerMove();
-                //gameBoard.addMark(player1.getMarker(), currentMove);
-            }else{
-                if(player2.hasOwnProperty('getComputerMove')){
-                    currentMove = player2.getComputerMove();
-                    //gameBoard.addMark(player2.getMarker(), currentMove);
-                }else{
-                    currentMove = player2.getPlayerMove();
-                    //gameBoard.addMark(player2.getMarker(), currentMove);
-                }
-            }
-            checkForWinner(currentMove);
-        }
-        
         if(isWinner == false){
             checkForTie();
         }
+
+        if(activePlayer === player1.getName()){
+            player1.getPlayerMove();
+        }else{
+            if(player2.hasOwnProperty('getComputerMove')){
+                player2.getComputerMove();
+            }else{
+                player2.getPlayerMove();
+            }
+        }
+    
     }
 
-    function startGame(){
-        chooseOpponent();
-        assignFirstMarker();
-        playXFirst();
-        //playGame();
-        displayGame.displayMoves();
-    }
+    
 
-    startGame();
+    chooseOpponent();
 
-    return {getActiveMarker};    
+    return {getActiveMarker, switchPlayer, playGame, checkForWinner};    
 })();
 
 
