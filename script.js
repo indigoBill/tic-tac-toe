@@ -13,7 +13,6 @@ const gameBoard = (function(){
     function addMark(mark, boardIndex){
         board.splice(boardIndex, 1, mark);
         console.log(getBoard());
-        
     }
 
     return {getBoard, resetBoard, addMark};
@@ -22,14 +21,8 @@ const gameBoard = (function(){
 const createPlayer = function(name = 'Player'){
     let marker;
 
-    const board = gameBoard.getBoard();
-
     function getName(){
         return name;
-    }
-
-    function setName(newName){
-        name = newName;
     }
 
     function setMarker(playerMarker){
@@ -40,12 +33,31 @@ const createPlayer = function(name = 'Player'){
         return marker;
     }
 
-    function getPlayerMove(){
+    function addPlayerMove(){
         const gameSquares = document.querySelectorAll('.game-square');
-        gameSquares.forEach((square) => square.addEventListener('click', displayGame.updateBoardPlayer));
+
+        function updateBoard(event){
+            const square = event.target;
+            const squareClassName = event.target.className;
+            const squareIndex = Number(squareClassName.charAt(squareClassName.length - 1));
+            
+            if(square.textContent == '' && !(gameFlow.getGameStatus())){
+                gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
+                displayRound.displayMoves();
+    
+                gameFlow.checkForWinner(squareIndex);
+                gameFlow.playRound();
+            }
+
+            gameSquares.forEach((square) => square.removeEventListener('click', updateBoard));
+        }
+
+        gameSquares.forEach((square) => square.addEventListener('click', updateBoard));
+        
+
     }
 
-    return {getName, setName, getMarker, setMarker, getPlayerMove};
+    return {getName, getMarker, setMarker, addPlayerMove};
 }
 
 const createComputer = function(name = 'Computer'){
@@ -65,7 +77,7 @@ const createComputer = function(name = 'Computer'){
         return marker;
     }
 
-    function getComputerMove(){
+    function addComputerMove(){
         let availablePositions = [];
 
         board.forEach((element, index) => {
@@ -74,21 +86,23 @@ const createComputer = function(name = 'Computer'){
             }
         });
 
-        const getRandomPositionIndex = () => Math.floor(Math.random() * availablePositions.length);
+        const getRandomAvailablePositionIndex = () => Math.floor(Math.random() * availablePositions.length);
 
-        let squareIndex = availablePositions[getRandomPositionIndex()];
+        let squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+        
+        if(!(gameFlow.getGameStatus())){
+            gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
+            displayRound.displayMoves();
 
-        gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
-        displayGame.displayMoves();
-        gameFlow.checkForWinner(squareIndex);
-        gameFlow.switchPlayer();
-        gameFlow.playGame();
+            gameFlow.checkForWinner(squareIndex);
+            gameFlow.playRound();
+        };
     }
 
-    return {getName, getMarker, setMarker, getComputerMove};
+    return {getName, getMarker, setMarker, addComputerMove};
 }
 
-const displayGame = (function(){
+const displayRound = (function(){
     const board = gameBoard.getBoard();
 
     function displayMoves(){
@@ -99,36 +113,7 @@ const displayGame = (function(){
         }
     }
     
-    function updateBoardPlayer(event){
-        const square = event.target;
-        const squareClassName = event.target.className;
-        const squareIndex = Number(squareClassName.charAt(squareClassName.length - 1));
-        
-        if(square.textContent == ''){
-            square.textContent = gameFlow.getActiveMarker();
-            gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
-
-            gameFlow.checkForWinner(squareIndex);
-            gameFlow.switchPlayer();
-            gameFlow.playGame();
-        }else{
-            console.log('NOPE.CHOOSE ANOTHER SPOT');
-        }
-    }
-/*
-    function updateBoardComputer(computerMove){
-        const boardSquares = document.querySelectorAll('.game-square');
-        boardSquares.forEach((square) => {
-            let selectedClass = square.className;
-            let squareIndex = selectedClass.charAt(selectedClass.length - 1)
-
-            if(computerMove = squareIndex){
-                square.textContent = gameFlow.getActiveMarker();
-            }
-        });
-    }
-*/
-    return {displayMoves, updateBoardPlayer};
+    return {displayMoves};
 
 })();
 
@@ -138,6 +123,7 @@ const gameFlow = (function(){
     let activePlayer;
     let activeMarker;
     let isWinner = false;
+    let gameOver = false;
     
     const board = gameBoard.getBoard();
 
@@ -145,20 +131,31 @@ const gameFlow = (function(){
         return activeMarker;
     }
 
-    function chooseOpponent(){
-        const opponentsButtons = document.querySelectorAll('.opponent');
-        opponentsButtons.forEach((opponentButton) => opponentButton.addEventListener('click', createPlayers));
+    function getGameStatus(){
+        return gameOver;
+    }
 
-        function createPlayers(event){
-            if(event.target.textContent === 'COMPUTER'){
-                player1 = createPlayer();
-                player2 = createComputer();
+    function assignSecondMarker(){
+        const mark = player1.getMarker() === 'X' ? 'O' : 'X';
+        player2.setMarker(mark);
+    }
+
+    function playXFirst(){
+        if(player1.getMarker() === 'X'){
+            activePlayer = player1.getName();
+            activeMarker = player1.getMarker();
+            
+            player1.addPlayerMove();
+        } else{
+            activePlayer = player2.getName();
+            activeMarker = player2.getMarker();
+
+            if(player2.hasOwnProperty('addComputerMove')){
+                player2.addComputerMove();
             }else{
-                player1 = createPlayer('Player 1');
-                player2 = createPlayer('Player 2');
+                
+                player2.addPlayerMove();
             }
-            console.log('PLAYERS CREATED');
-            assignFirstMarker();
         }
     }
 
@@ -179,39 +176,31 @@ const gameFlow = (function(){
             console.log(`${player2.getName()} : ${player2.getMarker()}`);
 
             playXFirst();
+
+            markerButtons.forEach((markerButton) => markerButton.removeEventListener('click', selectMarkers));
         }
     }
 
-    function assignSecondMarker(){
-        const mark = player1.getMarker() === 'X' ? 'O' : 'X';
-        player2.setMarker(mark);
-    }
+    function chooseOpponent(){
+        const opponentsButtons = document.querySelectorAll('.opponent');
+        opponentsButtons.forEach((opponentButton) => opponentButton.addEventListener('click', createPlayers));
 
-    function playXFirst(){
-        if(player1.getMarker() === 'X'){
-            activePlayer = player1.getName();
-            activeMarker = player1.getMarker();
-            
-            player1.getPlayerMove();
-        } else{
-            activePlayer = player2.getName();
-            activeMarker = player2.getMarker();
-
-            if(player2.hasOwnProperty('getComputerMove')){
-                player2.getComputerMove();
+        function createPlayers(event){
+            if(event.target.textContent === 'COMPUTER'){
+                player1 = createPlayer();
+                player2 = createComputer();
             }else{
-                player2.getPlayerMove();
+                player1 = createPlayer('Player 1');
+                player2 = createPlayer('Player 2');
             }
+            console.log('PLAYERS CREATED');
+            assignFirstMarker();
         }
     }
 
     function switchPlayer(){
         activePlayer = activePlayer == player1.getName() ? player2.getName() : player1.getName();
         activeMarker = activeMarker == player1.getMarker() ? player2.getMarker() : player1.getMarker();
-    }
-
-    function checkForEmptySpaces(positionValue){
-        return positionValue !== '';
     }
 
     function checkForWinner(currentPlayerMove){
@@ -227,48 +216,58 @@ const gameFlow = (function(){
         filteredPossibleWins.forEach((array) => {
             if(array.every(checkForMarker)){
                 isWinner = true;
+                gameOver = true;
                 console.log(`${activePlayer} WINS!`);
-                /*
-                gameBoard.resetBoard();
-                console.log(board);
-                */
             }
-        })
+        });
     }
 
     function checkForTie(){
+        function checkForEmptySpaces(positionValue){
+            return positionValue !== '';
+        }    
+
         if(board.every(checkForEmptySpaces)){
+            gameOver = true;
             console.log('IT\'S A TIE!');
-            /*
-            gameBoard.resetBoard();
-            console.log(board);
-            */
         }
     }
 
-    function playGame(){
+    function restartGame(){
+        gameBoard.resetBoard();
+        isWinner = false;
+        gameOver = false;
+        console.log('A NEW GAME HAS STARTED');
+        displayRound.displayMoves();
+        console.log(board);
+    }
 
+    function playRound(){
         if(isWinner == false){
             checkForTie();
         }
+        
+        switchPlayer();
 
-        if(activePlayer === player1.getName()){
-            player1.getPlayerMove();
-        }else{
-            if(player2.hasOwnProperty('getComputerMove')){
-                player2.getComputerMove();
+        if(gameOver == false){
+
+            if(activePlayer === player1.getName()){
+                player1.addPlayerMove();
             }else{
-                player2.getPlayerMove();
+                if(player2.hasOwnProperty('addComputerMove')){
+                    player2.addComputerMove();
+                }else{
+                    player2.addPlayerMove();
+                }
             }
+        }else{
+            restartGame();
         }
-    
     }
-
-    
 
     chooseOpponent();
 
-    return {getActiveMarker, switchPlayer, playGame, checkForWinner};    
+    return {getActiveMarker, getGameStatus, playRound, checkForWinner};    
 })();
 
 
