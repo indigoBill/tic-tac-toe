@@ -43,7 +43,7 @@ const createPlayer = function(name = 'Player'){
             
             if(square.textContent == '' && !(gameFlow.getGameStatus())){
                 gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
-                displayRound.displayMoves();
+                displayUi.displayMoves();
     
                 gameFlow.checkForWinner(squareIndex);
                 gameFlow.playRound();
@@ -92,7 +92,7 @@ const createComputer = function(name = 'Computer'){
         
         if(!(gameFlow.getGameStatus())){
             gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
-            displayRound.displayMoves();
+            displayUi.displayMoves();
 
             gameFlow.checkForWinner(squareIndex);
             gameFlow.playRound();
@@ -102,8 +102,10 @@ const createComputer = function(name = 'Computer'){
     return {getName, getMarker, setMarker, addComputerMove};
 }
 
-const displayRound = (function(){
+const displayUi = (function(){
     const board = gameBoard.getBoard();
+    const opponentModal = document.querySelector('.opponent-modal-content');
+    const markerModal = document.querySelector('.marker-modal-content');
 
     function displayMoves(){
         for(let i = 0; i < board.length; i++){
@@ -112,8 +114,32 @@ const displayRound = (function(){
             uiSquare.textContent = board[i];
         }
     }
+
+    function displayOpponentModal(){
+        function showModal(event){
+            opponentModal.classList.add('show-modal-animation');
+        }
+
+        window.addEventListener('load', showModal);
+    }
+
+    function displayMarkerModal(){
+        markerModal.classList.add('show-modal-animation');
+    }
+
+    function hideOpponentModal(){
+        opponentModal.classList.remove('show-modal-animation');
+        opponentModal.classList.add('hide-modal-animation');
+    }
+
+    function hideMarkerModal(){
+        markerModal.classList.remove('show-modal-animation');
+        markerModal.classList.add('hide-modal-animation');
+    }
     
-    return {displayMoves};
+    displayOpponentModal();
+
+    return {displayMoves, hideOpponentModal, hideMarkerModal, displayMarkerModal};
 
 })();
 
@@ -151,7 +177,9 @@ const gameFlow = (function(){
             activeMarker = player2.getMarker();
 
             if(player2.hasOwnProperty('addComputerMove')){
-                player2.addComputerMove();
+                setTimeout(() => {
+                    player2.addComputerMove();
+                }, 1000);
             }else{
                 
                 player2.addPlayerMove();
@@ -171,6 +199,7 @@ const gameFlow = (function(){
             }
             
             assignSecondMarker();
+            displayUi.hideMarkerModal();
 
             console.log(`${player1.getName()} : ${player1.getMarker()}`);
             console.log(`${player2.getName()} : ${player2.getMarker()}`);
@@ -195,6 +224,8 @@ const gameFlow = (function(){
             }
             console.log('PLAYERS CREATED');
             assignFirstMarker();
+            displayUi.hideOpponentModal();
+            displayUi.displayMarkerModal();
         }
     }
 
@@ -238,7 +269,7 @@ const gameFlow = (function(){
         isWinner = false;
         gameOver = false;
         console.log('A NEW GAME HAS STARTED');
-        displayRound.displayMoves();
+        displayUi.displayMoves();
         console.log(board);
     }
 
