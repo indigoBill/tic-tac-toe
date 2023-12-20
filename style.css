@@ -26,16 +26,21 @@ body {
     color: #81B29A;
     font-weight: bold;
     font-size: 4em;
+    -webkit-text-stroke: #F4F1DE;
+    -webkit-text-stroke-width: 3px;
 }
 
 .game-board {
     display: grid;
     grid-template: repeat(3, 1fr) / repeat(3, 1fr);
     max-width: 30vw;
-    min-width: 350px;
+    min-width: 270px;
     width: 100%;
     height: auto;
     aspect-ratio: 1;
+    background-color: #E07A5F;
+    border: 8px solid #F2CC8F;
+    border-radius: 10px;
 }
 
 .game-board > div:nth-child(-n + 3) {
@@ -64,10 +69,16 @@ body {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(6px);
+    opacity: 100%;
+}
+
+.hide-modal-background {
+    display: none;
 }
 
 .opponent-modal-content,
-.marker-modal-content {
+.marker-modal-content,
+.game-over-modal-content {
     color: #E07A5F;
     background-color: #F2CC8F;
     border-radius: 10px;
@@ -75,8 +86,8 @@ body {
     left: 0;
     right: 0;
     padding: 20px;
-    width: 50vw;
-    min-width: 300px;
+    width: 30vw;
+    min-width: 250px;
     position: absolute;
     font-weight: bold;
     height: 150px;
@@ -86,16 +97,16 @@ body {
     text-align: center;
     gap: 20px;
     opacity: 0;
-    transition: margin 2s, opacity 2s;
+    transition: margin 1s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 1s;
 }
 
 .show-modal-animation {
-    margin: 15% auto;
+    margin: 18% auto;
     opacity: 100%;
 }
 
 .hide-modal-animation {
-    margin: 100% auto;
+    margin: 70% auto;
     opacity: 0;
 }
 
@@ -111,7 +122,6 @@ button {
     padding: 10px;
     color: #F4F1DE;
     font-weight: bold;
-    margin-top: 10px;
     height: 60px;
     min-width: 60px;
 }
@@ -122,5 +132,8 @@ button:hover {
     scale: 1.1;
 }
 
+h1 {
+    color: #81B29A;
+}
 
 
