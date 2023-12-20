@@ -12,7 +12,6 @@ const gameBoard = (function(){
 
     function addMark(mark, boardIndex){
         board.splice(boardIndex, 1, mark);
-        console.log(getBoard());
     }
 
     return {getBoard, resetBoard, addMark};
@@ -106,6 +105,7 @@ const displayUi = (function(){
     const board = gameBoard.getBoard();
     const opponentModal = document.querySelector('.opponent-modal-content');
     const markerModal = document.querySelector('.marker-modal-content');
+    const gameOverModal = document.querySelector('.game-over-modal-content');
 
     function displayMoves(){
         for(let i = 0; i < board.length; i++){
@@ -116,15 +116,19 @@ const displayUi = (function(){
     }
 
     function displayOpponentModal(){
-        function showModal(event){
+        function showModal(){
             opponentModal.classList.add('show-modal-animation');
+            opponentModal.classList.remove('hide-modal-animation');
         }
 
         window.addEventListener('load', showModal);
-    }
 
-    function displayMarkerModal(){
-        markerModal.classList.add('show-modal-animation');
+        const playAgainBtn = document.querySelector('.play-again-btn');
+        playAgainBtn.addEventListener('click', () => {
+            showModal();
+            hideGameOverModal();
+            gameFlow.restartGame();
+        });
     }
 
     function hideOpponentModal(){
@@ -132,14 +136,34 @@ const displayUi = (function(){
         opponentModal.classList.add('hide-modal-animation');
     }
 
+    function displayMarkerModal(){
+        markerModal.classList.add('show-modal-animation');
+        markerModal.classList.remove('hide-modal-animation');
+    }
+
     function hideMarkerModal(){
         markerModal.classList.remove('show-modal-animation');
         markerModal.classList.add('hide-modal-animation');
     }
+
+    function toggleModalBackground(){
+        const background = document.querySelector('.modal-background');
+        background.classList.toggle('hide-modal-background');
+    }
+
+    function displayGameOverModal(){
+        gameOverModal.classList.add('show-modal-animation');
+        gameOverModal.classList.remove('hide-modal-animation');
+    }
+
+    function hideGameOverModal(){
+        gameOverModal.classList.remove('show-modal-animation');
+        gameOverModal.classList.add('hide-modal-animation');
+    }
     
     displayOpponentModal();
 
-    return {displayMoves, hideOpponentModal, hideMarkerModal, displayMarkerModal};
+    return {displayMoves, hideOpponentModal, displayMarkerModal, hideMarkerModal, displayGameOverModal, toggleModalBackground};
 
 })();
 
@@ -179,7 +203,7 @@ const gameFlow = (function(){
             if(player2.hasOwnProperty('addComputerMove')){
                 setTimeout(() => {
                     player2.addComputerMove();
-                }, 1000);
+                }, 500);
             }else{
                 
                 player2.addPlayerMove();
@@ -200,9 +224,7 @@ const gameFlow = (function(){
             
             assignSecondMarker();
             displayUi.hideMarkerModal();
-
-            console.log(`${player1.getName()} : ${player1.getMarker()}`);
-            console.log(`${player2.getName()} : ${player2.getMarker()}`);
+            displayUi.toggleModalBackground();
 
             playXFirst();
 
@@ -222,7 +244,6 @@ const gameFlow = (function(){
                 player1 = createPlayer('Player 1');
                 player2 = createPlayer('Player 2');
             }
-            console.log('PLAYERS CREATED');
             assignFirstMarker();
             displayUi.hideOpponentModal();
             displayUi.displayMarkerModal();
@@ -248,7 +269,11 @@ const gameFlow = (function(){
             if(array.every(checkForMarker)){
                 isWinner = true;
                 gameOver = true;
-                console.log(`${activePlayer} WINS!`);
+                
+                const results = document.querySelector('.results');
+                results.textContent = `${activePlayer} (${activeMarker}) WINS!`;
+                displayUi.toggleModalBackground();
+                displayUi.displayGameOverModal();
             }
         });
     }
@@ -260,7 +285,11 @@ const gameFlow = (function(){
 
         if(board.every(checkForEmptySpaces)){
             gameOver = true;
-            console.log('IT\'S A TIE!');
+
+            const results = document.querySelector('.results');
+            results.textContent = 'IT\'S A TIE!';
+            displayUi.toggleModalBackground();
+            displayUi.displayGameOverModal();
         }
     }
 
@@ -268,9 +297,7 @@ const gameFlow = (function(){
         gameBoard.resetBoard();
         isWinner = false;
         gameOver = false;
-        console.log('A NEW GAME HAS STARTED');
         displayUi.displayMoves();
-        console.log(board);
     }
 
     function playRound(){
@@ -291,14 +318,12 @@ const gameFlow = (function(){
                     player2.addPlayerMove();
                 }
             }
-        }else{
-            restartGame();
         }
     }
 
     chooseOpponent();
 
-    return {getActiveMarker, getGameStatus, playRound, checkForWinner};    
+    return {getActiveMarker, getGameStatus, playRound, checkForWinner, restartGame};    
 })();
 
 
