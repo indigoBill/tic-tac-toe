@@ -76,8 +76,10 @@ const createComputer = function(name = 'Computer'){
         return marker;
     }
 
-    function addComputerMove(){
+    function addComputerMove(level){
+        const possibleWins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[2,4,6],[0,4,8]];
         let availablePositions = [];
+        let squareIndex;
 
         board.forEach((element, index) => {
             if(element === ''){
@@ -87,7 +89,73 @@ const createComputer = function(name = 'Computer'){
 
         const getRandomAvailablePositionIndex = () => Math.floor(Math.random() * availablePositions.length);
 
-        let squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+        function checkForWinningPlays(element){
+            if(board[element] === gameFlow.getActiveMarker() || board[element] === '') return true;
+        }
+
+        const fastestWins = possibleWins.filter((subArray) => subArray.every(checkForWinningPlays));
+
+        if(level === 'EASY'){
+            squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+
+        }else if(level === 'MEDIUM'){
+            const getRandomFastestWinsArrayIndex = () => Math.floor(Math.random() * fastestWins.length);
+
+            const randomArrayOfPositions = fastestWins[getRandomFastestWinsArrayIndex()];
+
+            if(randomArrayOfPositions){
+                randomArrayOfPositions.forEach((position) => {
+                    if(board[position] === ''){
+                        squareIndex = position;
+                    }
+                });
+            }else{
+                squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+            }
+
+        }else{
+
+            let largestNumOfArrays = 0;
+            let commonIndex;
+
+            for(let index = 0; index < 9; index++){
+                let numOfArrays = 0;
+
+                fastestWins.forEach((array) => {
+                    if(array.includes(index)){
+                        numOfArrays++;
+                    }
+                });
+
+                if(numOfArrays > largestNumOfArrays){
+                    largestNumOfArrays = numOfArrays;
+                    commonIndex = index;
+                }
+            }
+
+            const winningPlays = fastestWins.filter((subArray) => subArray.includes(commonIndex));
+
+            console.log(winningPlays);
+
+            //CHECK winningPlays ARRAY TO SEE IF ANY SUBARRAYS CONTAIN TWO OF THE ACTIVE MARKER
+            //IF SO PLAY FOR THE LAST EMPTY SPACE IF NOT RUN CODE BETWEEN //
+
+            //
+            const getRandomWinningPlaysArrayIndex = () => Math.floor(Math.random() * winningPlays.length);
+
+            const randomArrayOfPositions = winningPlays[getRandomWinningPlaysArrayIndex()];
+            //
+            if(randomArrayOfPositions){
+                randomArrayOfPositions.forEach((position) => {
+                    if(board[position] === ''){
+                        squareIndex = position;
+                    }
+                });
+            }else{
+                squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+            }
+        }
+        
         
         if(!(gameFlow.getGameStatus())){
             gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
@@ -138,7 +206,12 @@ const displayUi = (function(){
 
     function displayMarkerModal(){
         markerModal.classList.add('show-modal-animation');
-        markerModal.classList.remove('hide-modal-animation');
+        markerModal.classList.remove('hide-modal-animation'); 
+        
+        if(gameFlow.getPlayerType() === 'Computer'){
+            const levelSelector = document.querySelector('.level-selector-container');
+            levelSelector.style.display = 'block';
+        }
     }
 
     function hideMarkerModal(){
@@ -172,10 +245,15 @@ const gameFlow = (function(){
     let player2;
     let activePlayer;
     let activeMarker;
+    let level;
     let isWinner = false;
     let gameOver = false;
     
     const board = gameBoard.getBoard();
+
+    const levels = document.getElementsByName('level');
+
+    levels.forEach((oneLevel) => oneLevel.addEventListener('click', () => level = oneLevel.value));
 
     function getActiveMarker(){
         return activeMarker;
@@ -190,6 +268,10 @@ const gameFlow = (function(){
         player2.setMarker(mark);
     }
 
+    function getPlayerType(){
+        return player2.getName();
+    }
+
     function playXFirst(){
         if(player1.getMarker() === 'X'){
             activePlayer = player1.getName();
@@ -202,8 +284,10 @@ const gameFlow = (function(){
 
             if(player2.hasOwnProperty('addComputerMove')){
                 setTimeout(() => {
-                    player2.addComputerMove();
+                    player2.addComputerMove(level);
                 }, 500);
+                //
+                console.log(level);
             }else{
                 
                 player2.addPlayerMove();
@@ -313,7 +397,7 @@ const gameFlow = (function(){
                 player1.addPlayerMove();
             }else{
                 if(player2.hasOwnProperty('addComputerMove')){
-                    player2.addComputerMove();
+                    player2.addComputerMove(level);
                 }else{
                     player2.addPlayerMove();
                 }
@@ -323,7 +407,7 @@ const gameFlow = (function(){
 
     chooseOpponent();
 
-    return {getActiveMarker, getGameStatus, playRound, checkForWinner, restartGame};    
+    return {getActiveMarker, getGameStatus, getPlayerType, playRound, checkForWinner, restartGame};    
 })();
 
 
