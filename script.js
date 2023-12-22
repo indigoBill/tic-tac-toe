@@ -95,26 +95,55 @@ const createComputer = function(name = 'Computer'){
 
         const fastestWins = possibleWins.filter((subArray) => subArray.every(checkForWinningPlays));
 
+        function blockOpponentWin(){
+            function checkForOpponentPlays(element){
+                if(board[element] === gameFlow.getInactiveMarker() || board[element] === '') return true;
+            }
+    
+            const opponentWins = possibleWins.filter((subArray) => subArray.every(checkForOpponentPlays));
+
+            opponentWins.forEach((subArray, index) => {
+                const fillerArray = [];
+
+                subArray.forEach((position) => {
+                    fillerArray.push(board[position]);
+                });
+
+                if(fillerArray.indexOf(gameFlow.getInactiveMarker()) != fillerArray.lastIndexOf(gameFlow.getInactiveMarker())){
+                    const opponentFinalPlayArray = opponentWins[index];
+                    opponentFinalPlayArray.forEach((opponentFinalPlayPosition) => {
+                        if(board[opponentFinalPlayPosition] == ''){
+                            squareIndex = opponentFinalPlayPosition;
+                        }
+                    });
+                    
+                }
+            });
+        }
+
         if(level === 'EASY'){
             squareIndex = availablePositions[getRandomAvailablePositionIndex()];
 
         }else if(level === 'MEDIUM'){
             const getRandomFastestWinsArrayIndex = () => Math.floor(Math.random() * fastestWins.length);
-
             const randomArrayOfPositions = fastestWins[getRandomFastestWinsArrayIndex()];
 
-            if(randomArrayOfPositions){
-                randomArrayOfPositions.forEach((position) => {
+            blockOpponentWin();
+
+            if((!squareIndex && squareIndex !== 0) && randomArrayOfPositions){
+                const getRandomIndex = () => Math.floor(Math.random() * randomArrayOfPositions.length);
+             
+                while(!squareIndex && squareIndex !== 0){
+                    let position = randomArrayOfPositions[getRandomIndex()];
                     if(board[position] === ''){
                         squareIndex = position;
                     }
-                });
-            }else{
+                }
+            }else if((!squareIndex && squareIndex !== 0) && !randomArrayOfPositions){
                 squareIndex = availablePositions[getRandomAvailablePositionIndex()];
             }
 
-        }else{
-
+        }else if(level === 'HARD'){
             let largestNumOfArrays = 0;
             let commonIndex;
 
@@ -132,30 +161,70 @@ const createComputer = function(name = 'Computer'){
                     commonIndex = index;
                 }
             }
-
+            
+            //CHECK TO SEE IF THE COMPUTER HAS ANY WINNING MOVES TO PLAY & PLAY THAT MOVE
             const winningPlays = fastestWins.filter((subArray) => subArray.includes(commonIndex));
 
-            console.log(winningPlays);
+            winningPlays.forEach((subArray, index) => {
+                const fillerArray = [];
 
-            //CHECK winningPlays ARRAY TO SEE IF ANY SUBARRAYS CONTAIN TWO OF THE ACTIVE MARKER
-            //IF SO PLAY FOR THE LAST EMPTY SPACE IF NOT RUN CODE BETWEEN //
-
-            //
-            const getRandomWinningPlaysArrayIndex = () => Math.floor(Math.random() * winningPlays.length);
-
-            const randomArrayOfPositions = winningPlays[getRandomWinningPlaysArrayIndex()];
-            //
-            if(randomArrayOfPositions){
-                randomArrayOfPositions.forEach((position) => {
-                    if(board[position] === ''){
-                        squareIndex = position;
-                    }
+                subArray.forEach((position) => {
+                    fillerArray.push(board[position]);
                 });
-            }else{
-                squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+
+                if(fillerArray.indexOf(gameFlow.getActiveMarker()) != fillerArray.lastIndexOf(gameFlow.getActiveMarker())){
+                    const finalPlayArray = winningPlays[index];
+
+                    finalPlayArray.forEach((finalPlayPosition) => {
+                        if(board[finalPlayPosition] == ''){
+                            squareIndex = finalPlayPosition;
+                        }
+                    });
+                }
+            });
+
+            //STOP OPPONENT FROM WINNING IF THE COMPUTER DOESNT HAVE ANY WINNING PLAYS
+            if(!squareIndex && squareIndex !== 0){
+                blockOpponentWin();
+            }
+
+            //IF NEITHER PLAYER NOR COMPUTER HAS WINNING PLAYS PLAY A MOVE THAT EITHER...
+            //STOPS THE OPPONENT FROM SETTING UP A 2-WAY WIN (THIS OPTION TAKES PRIORITY)
+            //OR SETS UP A 2-WAY WIN FOR THE COMPUTER
+            if(!squareIndex && squareIndex !== 0){
+
+                const cornerPositions = [0, 2, 6, 8];
+
+                function checkCorners(position){
+                    return board[position] === gameFlow.getInactiveMarker();
+                }
+
+                //IF A PLAYER PLAYS A CORNER ALWAYS PLAY THE CENTER IF ITS AVAILABLE TO STOP THEIR 2-WAY WIN SETUP
+                let twoWayBlocker = 4;
+
+                if(cornerPositions.some(checkCorners) && board[twoWayBlocker] === ''){
+                    squareIndex = twoWayBlocker;
+                }else{
+                    const getRandomWinningPlaysArrayIndex = () => Math.floor(Math.random() * winningPlays.length);
+
+                    const randomArrayOfPositions = winningPlays[getRandomWinningPlaysArrayIndex()];
+                
+                    if(randomArrayOfPositions){
+
+                        const getRandomTwoWayIndex = () => Math.floor(Math.random() * randomArrayOfPositions.length);
+
+                        while(!squareIndex && squareIndex != 0){
+                            let position = randomArrayOfPositions[getRandomTwoWayIndex()];
+                            if(board[position] === ''){
+                                squareIndex = position;
+                            }
+                        }
+                    }else{
+                        squareIndex = availablePositions[getRandomAvailablePositionIndex()];
+                    }
+                }
             }
         }
-        
         
         if(!(gameFlow.getGameStatus())){
             gameBoard.addMark(gameFlow.getActiveMarker(), squareIndex);
@@ -259,6 +328,11 @@ const gameFlow = (function(){
         return activeMarker;
     }
 
+    function getInactiveMarker(){
+        let inactiveMarker = (activeMarker === 'X') ? 'O' : 'X';
+        return inactiveMarker;
+    }
+
     function getGameStatus(){
         return gameOver;
     }
@@ -286,10 +360,8 @@ const gameFlow = (function(){
                 setTimeout(() => {
                     player2.addComputerMove(level);
                 }, 500);
-                //
-                console.log(level);
-            }else{
                 
+            }else{
                 player2.addPlayerMove();
             }
         }
@@ -358,6 +430,7 @@ const gameFlow = (function(){
                 results.textContent = `${activePlayer} (${activeMarker}) WINS!`;
                 displayUi.toggleModalBackground();
                 displayUi.displayGameOverModal();
+
             }
         });
     }
@@ -407,7 +480,7 @@ const gameFlow = (function(){
 
     chooseOpponent();
 
-    return {getActiveMarker, getGameStatus, getPlayerType, playRound, checkForWinner, restartGame};    
+    return {getActiveMarker, getInactiveMarker, getGameStatus, getPlayerType, playRound, checkForWinner, restartGame};    
 })();
 
 
