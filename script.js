@@ -47,11 +47,9 @@ const createPlayer = function(name = 'Player'){
                 gameFlow.checkForWinner(squareIndex);
                 gameFlow.playRound();
             }
-
-            gameSquares.forEach((square) => square.removeEventListener('click', updateBoard));
         }
 
-        gameSquares.forEach((square) => square.addEventListener('click', updateBoard));
+        gameSquares.forEach((square) => square.addEventListener('click', updateBoard, {once : true}));
         
 
     }
@@ -262,9 +260,9 @@ const displayUi = (function(){
 
         const playAgainBtn = document.querySelector('.play-again-btn');
         playAgainBtn.addEventListener('click', () => {
+            gameFlow.restartGame();
             showModal();
             hideGameOverModal();
-            gameFlow.restartGame();
         });
     }
 
@@ -277,9 +275,22 @@ const displayUi = (function(){
         markerModal.classList.add('show-modal-animation');
         markerModal.classList.remove('hide-modal-animation'); 
         
+        const markerButtons = document.querySelectorAll('.marker');
+        markerButtons.forEach((button) => button.classList.remove('selected-button'));
+
+        const levelSelector = document.querySelector('.level-selector-container');
+
         if(gameFlow.getPlayerType() === 'Computer'){
-            const levelSelector = document.querySelector('.level-selector-container');
             levelSelector.style.display = 'block';
+
+            const levels = document.getElementsByName('level');
+            levels.forEach((level) => {
+                level.disabled = true;
+                level.checked = false;
+            });
+
+        }else{
+            levelSelector.style.display = 'none';
         }
     }
 
@@ -319,10 +330,6 @@ const gameFlow = (function(){
     let gameOver = false;
     
     const board = gameBoard.getBoard();
-
-    const levels = document.getElementsByName('level');
-
-    levels.forEach((oneLevel) => oneLevel.addEventListener('click', () => level = oneLevel.value));
 
     function getActiveMarker(){
         return activeMarker;
@@ -367,6 +374,18 @@ const gameFlow = (function(){
         }
     }
 
+    function assignLevel(){
+        const levels = document.getElementsByName('level');
+        levels.forEach((oneLevel) => oneLevel.addEventListener('click', addLevel));
+
+        function addLevel(event){
+            level = event.target.value;
+            displayUi.hideMarkerModal();
+            displayUi.toggleModalBackground();
+            playXFirst();
+        }
+    }
+
     function assignFirstMarker(){
         const markerButtons = document.querySelectorAll('.marker');
         markerButtons.forEach((markerButton) => markerButton.addEventListener('click', selectMarkers));
@@ -379,13 +398,27 @@ const gameFlow = (function(){
             }
             
             assignSecondMarker();
-            displayUi.hideMarkerModal();
-            displayUi.toggleModalBackground();
 
-            playXFirst();
+            if(getPlayerType() !== 'Computer'){
+                displayUi.hideMarkerModal();
+                displayUi.toggleModalBackground();
 
-            markerButtons.forEach((markerButton) => markerButton.removeEventListener('click', selectMarkers));
+                playXFirst();
+            }else{
+                markerButtons.forEach((button) => {
+                    if(event.target === button){
+                        button.classList.add('selected-button');
+                    }else{
+                        button.classList.remove('selected-button');
+                    }
+                });
+
+                const levels = document.getElementsByName('level');
+                levels.forEach((level) => level.disabled = false);
+            }
         }
+        
+        assignLevel();
     }
 
     function chooseOpponent(){
@@ -400,10 +433,11 @@ const gameFlow = (function(){
                 player1 = createPlayer('Player 1');
                 player2 = createPlayer('Player 2');
             }
-            assignFirstMarker();
             displayUi.hideOpponentModal();
             displayUi.displayMarkerModal();
         }
+
+        assignFirstMarker();
     }
 
     function switchPlayer(){
