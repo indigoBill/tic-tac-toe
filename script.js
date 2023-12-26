@@ -170,7 +170,7 @@ const createComputer = function(name = 'Computer'){
                     fillerArray.push(board[position]);
                 });
 
-                if(fillerArray.indexOf(gameFlow.getActiveMarker()) != fillerArray.lastIndexOf(gameFlow.getActiveMarker())){
+                if(fillerArray.indexOf(gameFlow.getActiveMarker()) !== fillerArray.lastIndexOf(gameFlow.getActiveMarker())){
                     const finalPlayArray = winningPlays[index];
 
                     finalPlayArray.forEach((finalPlayPosition) => {
